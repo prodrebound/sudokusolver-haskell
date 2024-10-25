@@ -1,7 +1,7 @@
 --freies Feld wird durch -1 dargestellt
 
-newtype MatrixRow = MatrixRow(Int, Int, Int, Int, Int, Int, Int, Int, Int)
-newtype Matrix = Matrix (MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow)
+data MatrixRow = MatrixRow(Int, Int, Int, Int, Int, Int, Int, Int, Int)
+data Matrix = Matrix (MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow)
 
 matrixRowToIntList :: MatrixRow -> [Int]
 matrixRowToIntList (MatrixRow(x1, x2, x3, x4, x5, x6, x7, x8, x9)) = [x1, x2, x3, x4, x5, x6, x7, x8, x9]
@@ -20,7 +20,7 @@ getIntFromList (m:ms) x = getIntFromList ms (x-1)
 getColumnListFromMatrix :: Matrix -> Int -> [Int]
 getColumnListFromMatrix (Matrix(r1, r2, r3, r4, r5, r6, r7, r8, r9)) x = [getIntFromList(matrixRowToIntList r1) x, getIntFromList (matrixRowToIntList r2) x, getIntFromList (matrixRowToIntList r3) x, getIntFromList (matrixRowToIntList r4) x, getIntFromList (matrixRowToIntList r5) x, getIntFromList (matrixRowToIntList r6) x, getIntFromList (matrixRowToIntList r7) x, getIntFromList (matrixRowToIntList r8) x, getIntFromList (matrixRowToIntList r9) x]
 
-newtype MatrixPosition = MatrixPosition(Int, Int)
+data MatrixPosition = MatrixPosition(Int, Int)
 
 incrementMatrixPosition :: MatrixPosition -> MatrixPosition
 incrementMatrixPosition (MatrixPosition(8, y)) = MatrixPosition(0, y+1)
