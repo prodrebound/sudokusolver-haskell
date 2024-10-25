@@ -91,15 +91,13 @@ listToMatrix list = Matrix (
 sudokuList = [3,-1,6,5,-1,8,4,-1,-1,5,2,-1,-1,-1,-1,-1,-1,-1,-1,8,7,-1,-1,-1,-1,3,1,-1,-1,3,-1,1,-1,-1,8,-1,9,-1,-1,8,6,3,-1,-1,5,-1,5,-1,-1,9,-1,6,-1,-1,1,3,-1,-1,-1,-1,2,5,-1,-1,-1,-1,-1,-1,-1,-1,7,4,-1,-1,5,2,-1,6,3,-1,-1]
 sudokuMatrix = listToMatrix sudokuList
 
--- TODO iterate over Matrix and print in console
-iterateMatrix :: Matrix -> MatrixPosition -> IO()
-iterateMatrix m p = 
+printIteratedMatrix :: Matrix -> MatrixPosition -> IO()
+printIteratedMatrix m p = 
     if checkIfMatrixRowOutOfBound p 
     then print "finished" 
     else do
         print (getValueAtMatrixPosition m p)
-        iterateMatrix m (incrementMatrixPosition p)
--- iterateMatrix m p = print getValueAtMatrixPosition m (MatrixPosition(x,y)) | x <- [0..8], y <- [0..8]
+        printIteratedMatrix m (incrementMatrixPosition p)
 
 
 -- TODO implement backtracking
