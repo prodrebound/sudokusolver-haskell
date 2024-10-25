@@ -13,18 +13,18 @@ getRowFromRowList :: [MatrixRow] -> Int -> MatrixRow
 getRowFromRowList (m:ms) 0 = m
 getRowFromRowList (m:ms) x = getRowFromRowList ms (x-1)
 
-getIntFromList :: [Int] -> Int -> Int
-getIntFromList (m:ms) 0 = m
-getIntFromList (m:ms) x = getIntFromList ms (x-1)
+getListItem :: [a] -> Int -> a
+getListItem (m:ms) 0 = m
+getListItem (m:ms) x = getListItem ms (x-1)
 
 getRowIntListFromMatrix :: Matrix -> Int -> [Int]
 getRowIntListFromMatrix m x = matrixRowToIntList (getRowFromRowList (matrixToRowList m) x)
 
 getColumnIntListFromMatrix :: Matrix -> Int -> [Int]
-getColumnIntListFromMatrix (Matrix(r1, r2, r3, r4, r5, r6, r7, r8, r9)) x = [getIntFromList (matrixRowToIntList r1) x, getIntFromList (matrixRowToIntList r2) x, getIntFromList (matrixRowToIntList r3) x, getIntFromList (matrixRowToIntList r4) x, getIntFromList (matrixRowToIntList r5) x, getIntFromList (matrixRowToIntList r6) x, getIntFromList (matrixRowToIntList r7) x, getIntFromList (matrixRowToIntList r8) x, getIntFromList (matrixRowToIntList r9) x]
+getColumnIntListFromMatrix (Matrix(r1, r2, r3, r4, r5, r6, r7, r8, r9)) x = [getListItem (matrixRowToIntList r1) x, getListItem (matrixRowToIntList r2) x, getListItem (matrixRowToIntList r3) x, getListItem (matrixRowToIntList r4) x, getListItem (matrixRowToIntList r5) x, getListItem (matrixRowToIntList r6) x, getListItem (matrixRowToIntList r7) x, getListItem (matrixRowToIntList r8) x, getListItem (matrixRowToIntList r9) x]
 
 getElementFromRow :: MatrixRow -> Int -> Int
-getElementFromRow m x = getIntFromList (matrixRowToIntList m) x
+getElementFromRow m x = getListItem (matrixRowToIntList m) x
 
 --list must contain 9 elements
 rowListToMatrix :: [MatrixRow] -> Matrix
@@ -34,6 +34,7 @@ data MatrixPosition = MatrixPosition(Int, Int)
 
 incrementMatrixPosition :: MatrixPosition -> MatrixPosition
 incrementMatrixPosition (MatrixPosition(8, y)) = MatrixPosition (0, y+1)
+incrementMatrixPosition (MatrixPosition(x,y)) = MatrixPosition (x+1, y)
 
 --if true then we should be finished
 checkIfMatrixRowOutOfBound :: MatrixPosition -> Bool
@@ -43,7 +44,7 @@ checkIfNumberIn3x3 :: Matrix -> MatrixPosition -> Int -> Bool
 checkIfNumberIn3x3 m (MatrixPosition(x,y)) num =
     let startX = (x `div` 3) * 3
         startY = (y `div` 3) * 3
-        block = [ getIntFromList (getRowIntListFromMatrix m row) col
+        block = [ getListItem (getRowIntListFromMatrix m row) col
             | row <- [startY..startY+2]
             , col <- [startX..startX+2]
             ]
@@ -54,7 +55,7 @@ checkIfPositionLegal m (MatrixPosition(x, y)) i =   not (elem i (filterOutEmptyP
 
 --all the initial given values in this Matrix are 1, all values which are not given are 0
 checkIfPositionEmpty :: Matrix -> MatrixPosition -> Bool
-checkIfPositionEmpty m (MatrixPosition(x, y)) = (getIntFromList (matrixRowToIntList (getRowFromRowList (matrixToRowList m) y)) x) == -1
+checkIfPositionEmpty m (MatrixPosition(x, y)) = (getListItem (matrixRowToIntList (getRowFromRowList (matrixToRowList m) y)) x) == -1
 
 filterOutEmptyPositions :: [Int] -> [Int]
 filterOutEmptyPositions arr = [x | x <- arr, x /= -1]
@@ -65,7 +66,40 @@ getValueAtMatrixPosition m (MatrixPosition(x,y)) = getElementFromRow (getRowFrom
 getFixValueMatrix :: Matrix -> [Bool]
 getFixValueMatrix m = [getValueAtMatrixPosition m (MatrixPosition (x, y)) == -1 | x <- [0..8], y <- [0..8]]
 
---nÃ¤chste Schritte:
---check if MatrixPosition(x,y) is fix
---iterate over Matrix
---implement backtracking
+matrixPosToListPos :: MatrixPosition -> Int
+matrixPosToListPos (MatrixPosition(x,y)) = x + 9*y
+
+checkIfMatrixPosFix :: Matrix -> MatrixPosition -> Bool
+checkIfMatrixPosFix m p = getListItem (getFixValueMatrix m) (matrixPosToListPos p) == True
+
+listToMatrixRow :: [Int] -> MatrixRow
+listToMatrixRow [a, b, c, d, e, f, g, h, i] = MatrixRow (a, b, c, d, e, f, g, h, i)
+
+listToMatrix :: [Int] -> Matrix
+listToMatrix list = Matrix (
+        listToMatrixRow (take 9 list),
+        listToMatrixRow (take 9 (drop 9 list)),
+        listToMatrixRow (take 9 (drop 18 list)),
+        listToMatrixRow (take 9 (drop 27 list)),
+        listToMatrixRow (take 9 (drop 36 list)),
+        listToMatrixRow (take 9 (drop 45 list)),
+        listToMatrixRow (take 9 (drop 54 list)),
+        listToMatrixRow (take 9 (drop 63 list)),
+        listToMatrixRow (take 9 (drop 72 list))
+    )
+
+sudokuList = [3,-1,6,5,-1,8,4,-1,-1,5,2,-1,-1,-1,-1,-1,-1,-1,-1,8,7,-1,-1,-1,-1,3,1,-1,-1,3,-1,1,-1,-1,8,-1,9,-1,-1,8,6,3,-1,-1,5,-1,5,-1,-1,9,-1,6,-1,-1,1,3,-1,-1,-1,-1,2,5,-1,-1,-1,-1,-1,-1,-1,-1,7,4,-1,-1,5,2,-1,6,3,-1,-1]
+sudokuMatrix = listToMatrix sudokuList
+
+-- TODO iterate over Matrix and print in console
+iterateMatrix :: Matrix -> MatrixPosition -> IO()
+iterateMatrix m p = 
+    if checkIfMatrixRowOutOfBound p 
+    then print "finished" 
+    else do
+        print (getValueAtMatrixPosition m p)
+        iterateMatrix m (incrementMatrixPosition p)
+-- iterateMatrix m p = print getValueAtMatrixPosition m (MatrixPosition(x,y)) | x <- [0..8], y <- [0..8]
+
+
+-- TODO implement backtracking
