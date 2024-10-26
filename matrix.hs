@@ -36,9 +36,13 @@ incrementMatrixPosition :: MatrixPosition -> MatrixPosition
 incrementMatrixPosition (MatrixPosition(8, y)) = MatrixPosition (0, y+1)
 incrementMatrixPosition (MatrixPosition(x,y)) = MatrixPosition (x+1, y)
 
+decrementMatrixPosition :: MatrixPosition -> MatrixPosition
+decrementMatrixPosition (MatrixPosition(0, y)) = MatrixPosition (8, y-1)
+decrementMatrixPosition (MatrixPosition(x, y)) = MatrixPosition (x-1, y)
+
 --if true then we should be finished
 checkIfMatrixRowOutOfBound :: MatrixPosition -> Bool
-checkIfMatrixRowOutOfBound (MatrixPosition(x, y)) = y > 8
+checkIfMatrixRowOutOfBound (MatrixPosition(x, y)) = y > 8 || y < 0
 
 checkIfNumberIn3x3 :: Matrix -> MatrixPosition -> Int -> Bool
 checkIfNumberIn3x3 m (MatrixPosition(x,y)) num =
@@ -69,8 +73,8 @@ getFixValueMatrix m = [getValueAtMatrixPosition m (MatrixPosition (x, y)) /= -1 
 matrixPosToListPos :: MatrixPosition -> Int
 matrixPosToListPos (MatrixPosition(x,y)) = x + 9*y
 
-checkIfMatrixPosFix :: Matrix -> MatrixPosition -> Bool
-checkIfMatrixPosFix m p = getListItem (getFixValueMatrix m) (matrixPosToListPos p) == True
+checkIfMatrixPosFix :: Matrix -> MatrixPosition -> [Bool] -> Bool
+checkIfMatrixPosFix m p fixvalues = getListItem fixvalues (matrixPosToListPos p) == True
 
 listToMatrixRow :: [Int] -> MatrixRow
 listToMatrixRow [a, b, c, d, e, f, g, h, i] = MatrixRow (a, b, c, d, e, f, g, h, i)
@@ -112,3 +116,22 @@ setValueAtMatrixPos m (MatrixPosition(x,y)) value =
         newMatrixRowList = take y rowList ++ [newRow] ++ drop (y+1) rowList
     in rowListToMatrix newMatrixRowList
 
+backtracking :: Matrix -> MatrixPosition -> Matrix
+backtracking m pos = backtrackingIteration m pos (getFixValueMatrix m)
+
+backtrackingIteration :: Matrix -> MatrixPosition -> [Bool] -> Matrix
+backtrackingIteration m pos fixvalues 
+    | checkIfMatrixRowOutOfBound pos = m
+    | getValueAtMatrixPosition m pos == 10 = backtrackingIteration (setValueAtMatrixPos m pos 0) (getPreviousMatrixPosition m pos fixvalues) fixvalues
+    | checkIfMatrixPosFix m pos fixvalues || checkIfPositionLegal m pos (getValueAtMatrixPosition m pos) = backtrackingIteration m (getNextMatrixPosition m pos fixvalues) fixvalues
+    | otherwise =  backtrackingIteration (increaseBacktrackingValue m pos (getValueAtMatrixPosition m pos)) pos fixvalues
+
+getNextMatrixPosition :: Matrix -> MatrixPosition -> [Bool] -> MatrixPosition
+getNextMatrixPosition m pos fixvalues = if checkIfMatrixPosFix m (incrementMatrixPosition pos) fixvalues then  getNextMatrixPosition m (incrementMatrixPosition pos) fixvalues else incrementMatrixPosition pos
+
+getPreviousMatrixPosition :: Matrix -> MatrixPosition -> [Bool] -> MatrixPosition
+getPreviousMatrixPosition m pos fixvalues = if checkIfMatrixPosFix m (decrementMatrixPosition pos) fixvalues then  getPreviousMatrixPosition m (decrementMatrixPosition pos) fixvalues else decrementMatrixPosition pos
+
+increaseBacktrackingValue :: Matrix -> MatrixPosition -> Int -> Matrix
+increaseBacktrackingValue m pos (-1) = setValueAtMatrixPos m pos 1
+increaseBacktrackingValue m pos n = setValueAtMatrixPos m pos (n+1)
