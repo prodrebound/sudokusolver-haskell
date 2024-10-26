@@ -64,7 +64,7 @@ getValueAtMatrixPosition :: Matrix -> MatrixPosition -> Int
 getValueAtMatrixPosition m (MatrixPosition(x,y)) = getElementFromRow (getRowFromRowList (matrixToRowList m) y) x
 
 getFixValueMatrix :: Matrix -> [Bool]
-getFixValueMatrix m = [getValueAtMatrixPosition m (MatrixPosition (x, y)) == -1 | x <- [0..8], y <- [0..8]]
+getFixValueMatrix m = [getValueAtMatrixPosition m (MatrixPosition (x, y)) /= -1 | y <- [0..8], x <- [0..8]]
 
 matrixPosToListPos :: MatrixPosition -> Int
 matrixPosToListPos (MatrixPosition(x,y)) = x + 9*y
@@ -101,3 +101,14 @@ printIteratedMatrix m p =
 
 
 -- TODO implement backtracking
+
+setValueAtMatrixPos :: Matrix -> MatrixPosition -> Int -> Matrix
+setValueAtMatrixPos m (MatrixPosition(x,y)) value = 
+    let rowList = matrixToRowList m
+        targetRow = getRowFromRowList rowList y
+        oldIntList = matrixRowToIntList targetRow
+        newRowList = take x oldIntList ++ [value] ++ drop (x+1) oldIntList
+        newRow = listToMatrixRow newRowList
+        newMatrixRowList = take y rowList ++ [newRow] ++ drop (y+1) rowList
+    in rowListToMatrix newMatrixRowList
+
