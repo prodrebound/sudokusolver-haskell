@@ -14,8 +14,11 @@ getRowFromRowList (m:ms) 0 = m
 getRowFromRowList (m:ms) x = getRowFromRowList ms (x-1)
 
 getListItem :: [a] -> Int -> a
+getListItem [] _ = error "Index out of bounds"
 getListItem (m:ms) 0 = m
-getListItem (m:ms) x = getListItem ms (x-1)
+getListItem (m:ms) x
+    | x < 0     = error "Negative index"
+    | otherwise = getListItem ms (x-1)
 
 getRowIntListFromMatrix :: Matrix -> Int -> [Int]
 getRowIntListFromMatrix m x = matrixRowToIntList (getRowFromRowList (matrixToRowList m) x)
@@ -121,17 +124,86 @@ backtracking m pos = backtrackingIteration m pos (getFixValueMatrix m)
 
 backtrackingIteration :: Matrix -> MatrixPosition -> [Bool] -> Matrix
 backtrackingIteration m pos fixvalues 
-    | checkIfMatrixRowOutOfBound pos = m
-    | getValueAtMatrixPosition m pos == 10 = backtrackingIteration (setValueAtMatrixPos m pos 0) (getPreviousMatrixPosition m pos fixvalues) fixvalues
-    | checkIfMatrixPosFix m pos fixvalues || checkIfPositionLegal m pos (getValueAtMatrixPosition m pos) = backtrackingIteration m (getNextMatrixPosition m pos fixvalues) fixvalues
-    | otherwise =  backtrackingIteration (increaseBacktrackingValue m pos (getValueAtMatrixPosition m pos)) pos fixvalues
+    | checkIfMatrixRowOutOfBound pos = m  -- Erfolgreicher Fall
+    | checkIfMatrixPosFix m pos fixvalues = 
+        backtrackingIteration m (getNextMatrixPosition m pos fixvalues) fixvalues
+    | checkPositionValue m pos fixvalues = 
+        backtrackingIteration m (getNextMatrixPosition m pos fixvalues) fixvalues
+    | otherwise = 
+        let currentVal = getValueAtMatrixPosition m pos
+        in if currentVal == -1
+           then tryValues m pos 1 fixvalues
+           else tryValues m pos (currentVal + 1) fixvalues
+
+checkPositionValue :: Matrix -> MatrixPosition -> [Bool] -> Bool
+checkPositionValue m pos fixvalues =
+    let val = getValueAtMatrixPosition m pos
+    in val /= -1 && checkIfPositionLegal m pos val
+
+tryValues :: Matrix -> MatrixPosition -> Int -> [Bool] -> Matrix
+tryValues m pos val fixvalues
+    | val > 9 = 
+        backtrackingIteration (setValueAtMatrixPos m pos (-1)) (getPreviousMatrixPosition m pos fixvalues) fixvalues
+    | checkIfPositionLegal m pos val = 
+        let newMatrix = setValueAtMatrixPos m pos val
+            nextPos = getNextMatrixPosition newMatrix pos fixvalues
+            result = backtrackingIteration newMatrix nextPos fixvalues
+        in if checkComplete result 
+           then result
+           else if getValueAtMatrixPosition result pos == -1  -- Wenn wir zurück gekommen sind
+                then tryValues m pos (val + 1) fixvalues
+                else result
+    | otherwise = tryValues m pos (val + 1) fixvalues
+
+checkComplete :: Matrix -> Bool
+checkComplete m = 
+    not (any (== -1) [getValueAtMatrixPosition m (MatrixPosition(x,y)) | x <- [0..8], y <- [0..8]]) &&
+    all (\pos -> checkPositionValue m pos []) [(MatrixPosition(x,y)) | x <- [0..8], y <- [0..8]]
 
 getNextMatrixPosition :: Matrix -> MatrixPosition -> [Bool] -> MatrixPosition
-getNextMatrixPosition m pos fixvalues = if checkIfMatrixPosFix m (incrementMatrixPosition pos) fixvalues then  getNextMatrixPosition m (incrementMatrixPosition pos) fixvalues else incrementMatrixPosition pos
+getNextMatrixPosition m pos fixvalues
+    | checkIfMatrixRowOutOfBound nextPos = nextPos
+    | checkIfMatrixPosFix m nextPos fixvalues = 
+        getNextMatrixPosition m nextPos fixvalues
+    | otherwise = nextPos
+    where nextPos = incrementMatrixPosition pos
 
 getPreviousMatrixPosition :: Matrix -> MatrixPosition -> [Bool] -> MatrixPosition
-getPreviousMatrixPosition m pos fixvalues = if checkIfMatrixPosFix m (decrementMatrixPosition pos) fixvalues then  getPreviousMatrixPosition m (decrementMatrixPosition pos) fixvalues else decrementMatrixPosition pos
+getPreviousMatrixPosition m pos fixvalues 
+    | x == 0 && y == 0 = error "No solution possible"
+    | checkIfMatrixPosFix m (decrementMatrixPosition pos) fixvalues = 
+        getPreviousMatrixPosition m (decrementMatrixPosition pos) fixvalues 
+    | otherwise = decrementMatrixPosition pos
+    where MatrixPosition(x,y) = pos
 
 increaseBacktrackingValue :: Matrix -> MatrixPosition -> Int -> Matrix
 increaseBacktrackingValue m pos (-1) = setValueAtMatrixPos m pos 1
 increaseBacktrackingValue m pos n = setValueAtMatrixPos m pos (n+1)
+
+printSudokuMatrix :: Matrix -> IO()
+printSudokuMatrix m = do
+    putStrLn "-------------------------"
+    printRows 0
+    where 
+        printRows 9 = return ()
+        printRows y = do
+            putStr "| "
+            printCols y 0
+            if y `mod` 3 == 2 
+                then putStrLn "-------------------------"
+                else return ()
+            printRows (y + 1)
+            
+        printCols y 9 = putStrLn "|"
+        printCols y x = do
+            let val = getValueAtMatrixPosition m (MatrixPosition(x,y))
+            putStr $ (if val == -1 then " " else show val)
+            putStr $ (if (x + 1) `mod` 3 == 0 then " | " else " ")
+            printCols y (x + 1)
+
+main = do
+    putStrLn "Original Sudoku:"
+    printSudokuMatrix sudokuMatrix
+    putStrLn "\nLösung:"
+    let result = backtracking sudokuMatrix (MatrixPosition(0,0))
+    printSudokuMatrix result
