@@ -1,7 +1,15 @@
 --free field displayed by -1
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use when" #-}
+{-# HLINT ignore "Use notElem" #-}
+{-# HLINT ignore "Redundant ==" #-}
+{-# HLINT ignore "Use infix" #-}
+{-# HLINT ignore "Eta reduce" #-}
+{-# HLINT ignore "Use newtype instead of data" #-}
 
 data MatrixRow = MatrixRow(Int, Int, Int, Int, Int, Int, Int, Int, Int)
 data Matrix = Matrix (MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow)
+data MatrixPosition = MatrixPosition(Int, Int)
 
 matrixRowToIntList :: MatrixRow -> [Int]
 matrixRowToIntList (MatrixRow(x1, x2, x3, x4, x5, x6, x7, x8, x9)) = [x1, x2, x3, x4, x5, x6, x7, x8, x9]
@@ -31,9 +39,7 @@ getElementFromRow m x = getListItem (matrixRowToIntList m) x
 
 --list must contain 9 elements
 rowListToMatrix :: [MatrixRow] -> Matrix
-rowListToMatrix [r0, r1, r2, r3, r4, r5, r6, r7, r8] = (Matrix (r0, r1, r2, r3, r4, r5, r6, r7, r8))
-
-data MatrixPosition = MatrixPosition(Int, Int)
+rowListToMatrix [r0, r1, r2, r3, r4, r5, r6, r7, r8] = Matrix (r0, r1, r2, r3, r4, r5, r6, r7, r8)
 
 incrementMatrixPosition :: MatrixPosition -> MatrixPosition
 incrementMatrixPosition (MatrixPosition(8, y)) = MatrixPosition (0, y+1)
@@ -62,7 +68,7 @@ checkIfPositionLegal m (MatrixPosition(x, y)) i =   not (elem i (filterOutEmptyP
 
 --all the initial given values in this Matrix are 1, all values which are not given are 0
 checkIfPositionEmpty :: Matrix -> MatrixPosition -> Bool
-checkIfPositionEmpty m (MatrixPosition(x, y)) = (getListItem (matrixRowToIntList (getRowFromRowList (matrixToRowList m) y)) x) == -1
+checkIfPositionEmpty m (MatrixPosition(x, y)) = getListItem (matrixRowToIntList (getRowFromRowList (matrixToRowList m) y)) x == -1
 
 filterOutEmptyPositions :: [Int] -> [Int]
 filterOutEmptyPositions arr = [x | x <- arr, x /= -1]
@@ -99,16 +105,16 @@ sudokuList = [3,-1,6,5,-1,8,4,-1,-1,5,2,-1,-1,-1,-1,-1,-1,-1,-1,8,7,-1,-1,-1,-1,
 sudokuMatrix = listToMatrix sudokuList
 
 printIteratedMatrix :: Matrix -> MatrixPosition -> IO()
-printIteratedMatrix m p = 
-    if checkIfMatrixRowOutOfBound p 
-    then print "finished" 
+printIteratedMatrix m p =
+    if checkIfMatrixRowOutOfBound p
+    then print "finished"
     else do
         print (getValueAtMatrixPosition m p)
         printIteratedMatrix m (incrementMatrixPosition p)
 
 
 setValueAtMatrixPos :: Matrix -> MatrixPosition -> Int -> Matrix
-setValueAtMatrixPos m (MatrixPosition(x,y)) value = 
+setValueAtMatrixPos m (MatrixPosition(x,y)) value =
     let rowList = matrixToRowList m
         targetRow = getRowFromRowList rowList y
         oldIntList = matrixRowToIntList targetRow
@@ -122,31 +128,46 @@ backtracking m pos = backtrackingIteration m pos (getFixValueMatrix m)
 
 backtrackingIteration :: Matrix -> MatrixPosition -> [Bool] -> Matrix
 backtrackingIteration m pos fixvalues
-    | checkIfMatrixRowOutOfBound pos = m
-    | checkIfMatrixPosFix pos fixvalues = backtrackingIteration m (getNextMatrixPosition pos fixvalues) fixvalues
-    | checkIfPositionEmpty m pos || checkIfPositionLegal m pos (getValueAtMatrixPosition m pos) =
-        let updatedMatrix = tryValues m pos fixvalues 1
-        in if getValueAtMatrixPosition updatedMatrix pos == -1
-           then backtrackingIteration updatedMatrix (getPreviousMatrixPosition pos fixvalues) fixvalues
-           else backtrackingIteration updatedMatrix (getNextMatrixPosition pos fixvalues) fixvalues
-    | otherwise = backtrackingIteration (tryValues m pos fixvalues 1) (getNextMatrixPosition pos fixvalues) fixvalues
+    | checkIfMatrixRowOutOfBound pos = m  -- Erfolgreicher Fall
+    | checkIfMatrixPosFix pos fixvalues =
+        backtrackingIteration m (getNextMatrixPosition pos fixvalues) fixvalues
+    | not (checkIfPositionEmpty m pos) &&  checkIfPositionLegal m pos (getValueAtMatrixPosition m pos) =
+        backtrackingIteration m (getNextMatrixPosition pos fixvalues) fixvalues
+    | otherwise =
+        let currentVal = getValueAtMatrixPosition m pos
+        in if currentVal == -1
+           then tryValues m pos 1 fixvalues
+           else tryValues m pos (currentVal + 1) fixvalues
 
-tryValues :: Matrix -> MatrixPosition -> [Bool] -> Int -> Matrix
-tryValues m pos fixvalues val
-    | val > 9 = setValueAtMatrixPos m pos (-1)
-    | checkIfMatrixPosFix pos fixvalues = m
-    | checkIfPositionLegal m pos val = setValueAtMatrixPos m pos val
-    | otherwise = tryValues m pos fixvalues (val + 1)
+checkPositionValue :: Matrix -> MatrixPosition -> [Bool] -> Bool
+checkPositionValue m pos fixvalues =
+    let val = getValueAtMatrixPosition m pos
+    in val /= -1 && checkIfPositionLegal m pos val
+
+tryValues :: Matrix -> MatrixPosition -> Int -> [Bool] -> Matrix
+tryValues m pos val fixvalues
+    | val > 9 =
+        backtrackingIteration (setValueAtMatrixPos m pos (-1)) (getPreviousMatrixPosition pos fixvalues) fixvalues
+    | checkIfPositionLegal m pos val =
+        let newMatrix = setValueAtMatrixPos m pos val
+            nextPos = getNextMatrixPosition pos fixvalues
+            result = backtrackingIteration newMatrix nextPos fixvalues
+        in if backtrackingFinished result
+           then result
+           else if getValueAtMatrixPosition result pos == -1  -- Wenn wir zurück gekommen sind
+                then tryValues m pos (val + 1) fixvalues
+                else result
+    | otherwise = tryValues m pos (val + 1) fixvalues
 
 getNextMatrixPosition :: MatrixPosition -> [Bool] -> MatrixPosition
-getNextMatrixPosition pos fixvalues 
+getNextMatrixPosition pos fixvalues
     | x == 8 && y == 8 = incrementMatrixPosition pos
     | checkIfMatrixPosFix (incrementMatrixPosition pos) fixvalues = getNextMatrixPosition (incrementMatrixPosition pos) fixvalues
     | otherwise = incrementMatrixPosition pos
-    where MatrixPosition(x,y) = pos 
-    
+    where MatrixPosition(x,y) = pos
+
 getPreviousMatrixPosition :: MatrixPosition -> [Bool] -> MatrixPosition
-getPreviousMatrixPosition pos fixvalues 
+getPreviousMatrixPosition pos fixvalues
     |  x == 0 && y == 0 = error "No valid position!"
     |  checkIfMatrixPosFix (decrementMatrixPosition pos) fixvalues = getPreviousMatrixPosition (decrementMatrixPosition pos) fixvalues
     |  otherwise = decrementMatrixPosition pos
@@ -157,32 +178,32 @@ increaseBacktrackingValue m pos (-1) = setValueAtMatrixPos m pos 1
 increaseBacktrackingValue m pos n = setValueAtMatrixPos m pos (n+1)
 
 backtrackingFinished :: Matrix -> Bool
-backtrackingFinished m = all (/= -1) [getValueAtMatrixPosition m (MatrixPosition(x,y)) | x <- [0..8], y <- [0..8]] && all (== True) [checkIfPositionLegal m (MatrixPosition(x,y)) (getValueAtMatrixPosition m (MatrixPosition(x,y))) | x <- [0..8], y <- [0..8]]
+backtrackingFinished m = all (/= -1) [getValueAtMatrixPosition m (MatrixPosition (x,y)) | x <- [0..8], y <- [0..8]] && all (== True) [checkIfPositionLegal m (MatrixPosition (x,y)) (getValueAtMatrixPosition m (MatrixPosition (x,y))) | x <- [0..8], y <- [0..8]]
 
 printSudokuMatrix :: Matrix -> IO()
 printSudokuMatrix m = do
     putStrLn "-------------------------"
     printRows 0
-    where 
+    where
         printRows 9 = return ()
         printRows y = do
             putStr "| "
             printCols y 0
-            if y `mod` 3 == 2 
+            if y `mod` 3 == 2
                 then putStrLn "-------------------------"
                 else return ()
             printRows (y + 1)
-            
+
         printCols y 9 = putStrLn ""
         printCols y x = do
-            let val = getValueAtMatrixPosition m (MatrixPosition(x,y))
-            putStr $ (if val == -1 then " " else show val)
-            putStr $ (if (x + 1) `mod` 3 == 0 then " | " else " ")
+            let val = getValueAtMatrixPosition m (MatrixPosition (x,y))
+            putStr (if val == -1 then " " else show val)
+            putStr (if (x + 1) `mod` 3 == 0 then " | " else " ")
             printCols y (x + 1)
 
 main = do
     putStrLn "Original Sudoku:"
     printSudokuMatrix sudokuMatrix
     putStrLn "\nLösung:"
-    let result = backtracking sudokuMatrix (MatrixPosition(0,0))
+    let result = backtracking sudokuMatrix (MatrixPosition (0,0))
     printSudokuMatrix result
