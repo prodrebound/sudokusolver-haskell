@@ -1,4 +1,3 @@
---free field displayed by -1
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use when" #-}
 {-# HLINT ignore "Use notElem" #-}
@@ -6,6 +5,8 @@
 {-# HLINT ignore "Use infix" #-}
 {-# HLINT ignore "Eta reduce" #-}
 {-# HLINT ignore "Use newtype instead of data" #-}
+
+import Data.Char (chr)
 
 data MatrixRow = MatrixRow(Int, Int, Int, Int, Int, Int, Int, Int, Int)
 data Matrix = Matrix (MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow)
@@ -112,7 +113,6 @@ printIteratedMatrix m p =
         print (getValueAtMatrixPosition m p)
         printIteratedMatrix m (incrementMatrixPosition p)
 
-
 setValueAtMatrixPos :: Matrix -> MatrixPosition -> Int -> Matrix
 setValueAtMatrixPos m (MatrixPosition(x,y)) value =
     let rowList = matrixToRowList m
@@ -127,37 +127,32 @@ backtracking :: Matrix -> MatrixPosition -> Matrix
 backtracking m pos = backtrackingIteration m pos (getFixValueMatrix m)
 
 backtrackingIteration :: Matrix -> MatrixPosition -> [Bool] -> Matrix
-backtrackingIteration m pos fixvalues
-    | checkIfMatrixRowOutOfBound pos = m  -- Erfolgreicher Fall
-    | checkIfMatrixPosFix pos fixvalues =
-        backtrackingIteration m (getNextMatrixPosition pos fixvalues) fixvalues
+backtrackingIteration m pos fixvalues 
+    | checkIfMatrixRowOutOfBound pos = m
+    | checkIfMatrixPosFix pos fixvalues = backtrackingIteration m (getNextMatrixPosition pos fixvalues) fixvalues
     | not (checkIfPositionEmpty m pos) &&  checkIfPositionLegal m pos (getValueAtMatrixPosition m pos) =
         backtrackingIteration m (getNextMatrixPosition pos fixvalues) fixvalues
-    | otherwise =
+    | otherwise = 
         let currentVal = getValueAtMatrixPosition m pos
-        in if currentVal == -1
-           then tryValues m pos 1 fixvalues
-           else tryValues m pos (currentVal + 1) fixvalues
+        in if currentVal == -1 
+            then evaluateTryValueResult m pos fixvalues (tryValues m pos 1 fixvalues) 
+            else evaluateTryValueResult m pos fixvalues (tryValues m pos (currentVal+1) fixvalues)
 
 checkPositionValue :: Matrix -> MatrixPosition -> [Bool] -> Bool
 checkPositionValue m pos fixvalues =
     let val = getValueAtMatrixPosition m pos
     in val /= -1 && checkIfPositionLegal m pos val
 
-tryValues :: Matrix -> MatrixPosition -> Int -> [Bool] -> Matrix
-tryValues m pos val fixvalues
-    | val > 9 =
-        backtrackingIteration (setValueAtMatrixPos m pos (-1)) (getPreviousMatrixPosition pos fixvalues) fixvalues
-    | checkIfPositionLegal m pos val =
-        let newMatrix = setValueAtMatrixPos m pos val
-            nextPos = getNextMatrixPosition pos fixvalues
-            result = backtrackingIteration newMatrix nextPos fixvalues
-        in if backtrackingFinished result
-           then result
-           else if getValueAtMatrixPosition result pos == -1  -- Wenn wir zurück gekommen sind
-                then tryValues m pos (val + 1) fixvalues
-                else result
-    | otherwise = tryValues m pos (val + 1) fixvalues
+tryValues :: Matrix -> MatrixPosition -> Int -> [Bool] -> Int
+tryValues m pos val fixvalues 
+    | val > 9 = -1
+    | checkIfPositionLegal m pos val = val
+    | otherwise = tryValues m pos (val+1) fixvalues
+
+evaluateTryValueResult :: Matrix -> MatrixPosition -> [Bool] -> Int -> Matrix
+evaluateTryValueResult m pos fixvalues val 
+    | val == -1 = backtrackingIteration (setValueAtMatrixPos m pos val) (getPreviousMatrixPosition pos fixvalues) fixvalues
+    | otherwise = backtrackingIteration (setValueAtMatrixPos m pos val) (getNextMatrixPosition pos fixvalues) fixvalues
 
 getNextMatrixPosition :: MatrixPosition -> [Bool] -> MatrixPosition
 getNextMatrixPosition pos fixvalues
