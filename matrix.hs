@@ -76,8 +76,8 @@ getFixValueMatrix m = [getValueAtMatrixPosition m (MatrixPosition (x, y)) /= -1 
 matrixPosToListPos :: MatrixPosition -> Int
 matrixPosToListPos (MatrixPosition(x,y)) = x + 9*y
 
-checkIfMatrixPosFix :: Matrix -> MatrixPosition -> [Bool] -> Bool
-checkIfMatrixPosFix m p fixvalues = getListItem fixvalues (matrixPosToListPos p) == True
+checkIfMatrixPosFix :: MatrixPosition -> [Bool] -> Bool
+checkIfMatrixPosFix p fixvalues = getListItem fixvalues (matrixPosToListPos p) == True
 
 listToMatrixRow :: [Int] -> MatrixRow
 listToMatrixRow [a, b, c, d, e, f, g, h, i] = MatrixRow (a, b, c, d, e, f, g, h, i)
@@ -107,8 +107,6 @@ printIteratedMatrix m p =
         printIteratedMatrix m (incrementMatrixPosition p)
 
 
--- TODO implement backtracking
-
 setValueAtMatrixPos :: Matrix -> MatrixPosition -> Int -> Matrix
 setValueAtMatrixPos m (MatrixPosition(x,y)) value = 
     let rowList = matrixToRowList m
@@ -123,62 +121,43 @@ backtracking :: Matrix -> MatrixPosition -> Matrix
 backtracking m pos = backtrackingIteration m pos (getFixValueMatrix m)
 
 backtrackingIteration :: Matrix -> MatrixPosition -> [Bool] -> Matrix
-backtrackingIteration m pos fixvalues 
-    | checkIfMatrixRowOutOfBound pos = m  -- Erfolgreicher Fall
-    | checkIfMatrixPosFix m pos fixvalues = 
-        backtrackingIteration m (getNextMatrixPosition m pos fixvalues) fixvalues
-    | checkPositionValue m pos fixvalues = 
-        backtrackingIteration m (getNextMatrixPosition m pos fixvalues) fixvalues
-    | otherwise = 
-        let currentVal = getValueAtMatrixPosition m pos
-        in if currentVal == -1
-           then tryValues m pos 1 fixvalues
-           else tryValues m pos (currentVal + 1) fixvalues
+backtrackingIteration m pos fixvalues
+    | checkIfMatrixRowOutOfBound pos = m
+    | checkIfMatrixPosFix pos fixvalues = backtrackingIteration m (getNextMatrixPosition pos fixvalues) fixvalues
+    | checkIfPositionEmpty m pos || checkIfPositionLegal m pos (getValueAtMatrixPosition m pos) =
+        let updatedMatrix = tryValues m pos fixvalues 1
+        in if getValueAtMatrixPosition updatedMatrix pos == -1
+           then backtrackingIteration updatedMatrix (getPreviousMatrixPosition pos fixvalues) fixvalues
+           else backtrackingIteration updatedMatrix (getNextMatrixPosition pos fixvalues) fixvalues
+    | otherwise = backtrackingIteration (tryValues m pos fixvalues 1) (getNextMatrixPosition pos fixvalues) fixvalues
 
-checkPositionValue :: Matrix -> MatrixPosition -> [Bool] -> Bool
-checkPositionValue m pos fixvalues =
-    let val = getValueAtMatrixPosition m pos
-    in val /= -1 && checkIfPositionLegal m pos val
+tryValues :: Matrix -> MatrixPosition -> [Bool] -> Int -> Matrix
+tryValues m pos fixvalues val
+    | val > 9 = setValueAtMatrixPos m pos (-1)
+    | checkIfMatrixPosFix pos fixvalues = m
+    | checkIfPositionLegal m pos val = setValueAtMatrixPos m pos val
+    | otherwise = tryValues m pos fixvalues (val + 1)
 
-tryValues :: Matrix -> MatrixPosition -> Int -> [Bool] -> Matrix
-tryValues m pos val fixvalues
-    | val > 9 = 
-        backtrackingIteration (setValueAtMatrixPos m pos (-1)) (getPreviousMatrixPosition m pos fixvalues) fixvalues
-    | checkIfPositionLegal m pos val = 
-        let newMatrix = setValueAtMatrixPos m pos val
-            nextPos = getNextMatrixPosition newMatrix pos fixvalues
-            result = backtrackingIteration newMatrix nextPos fixvalues
-        in if checkComplete result 
-           then result
-           else if getValueAtMatrixPosition result pos == -1  -- Wenn wir zurück gekommen sind
-                then tryValues m pos (val + 1) fixvalues
-                else result
-    | otherwise = tryValues m pos (val + 1) fixvalues
-
-checkComplete :: Matrix -> Bool
-checkComplete m = 
-    not (any (== -1) [getValueAtMatrixPosition m (MatrixPosition(x,y)) | x <- [0..8], y <- [0..8]]) &&
-    all (\pos -> checkPositionValue m pos []) [(MatrixPosition(x,y)) | x <- [0..8], y <- [0..8]]
-
-getNextMatrixPosition :: Matrix -> MatrixPosition -> [Bool] -> MatrixPosition
-getNextMatrixPosition m pos fixvalues
-    | checkIfMatrixRowOutOfBound nextPos = nextPos
-    | checkIfMatrixPosFix m nextPos fixvalues = 
-        getNextMatrixPosition m nextPos fixvalues
-    | otherwise = nextPos
-    where nextPos = incrementMatrixPosition pos
-
-getPreviousMatrixPosition :: Matrix -> MatrixPosition -> [Bool] -> MatrixPosition
-getPreviousMatrixPosition m pos fixvalues 
-    | x == 0 && y == 0 = error "No solution possible"
-    | checkIfMatrixPosFix m (decrementMatrixPosition pos) fixvalues = 
-        getPreviousMatrixPosition m (decrementMatrixPosition pos) fixvalues 
-    | otherwise = decrementMatrixPosition pos
+getNextMatrixPosition :: MatrixPosition -> [Bool] -> MatrixPosition
+getNextMatrixPosition pos fixvalues 
+    | x == 8 && y == 8 = incrementMatrixPosition pos
+    | checkIfMatrixPosFix (incrementMatrixPosition pos) fixvalues = getNextMatrixPosition (incrementMatrixPosition pos) fixvalues
+    | otherwise = incrementMatrixPosition pos
+    where MatrixPosition(x,y) = pos 
+    
+getPreviousMatrixPosition :: MatrixPosition -> [Bool] -> MatrixPosition
+getPreviousMatrixPosition pos fixvalues 
+    |  x == 0 && y == 0 = error "No valid position!"
+    |  checkIfMatrixPosFix (decrementMatrixPosition pos) fixvalues = getPreviousMatrixPosition (decrementMatrixPosition pos) fixvalues
+    |  otherwise = decrementMatrixPosition pos
     where MatrixPosition(x,y) = pos
 
 increaseBacktrackingValue :: Matrix -> MatrixPosition -> Int -> Matrix
 increaseBacktrackingValue m pos (-1) = setValueAtMatrixPos m pos 1
 increaseBacktrackingValue m pos n = setValueAtMatrixPos m pos (n+1)
+
+backtrackingFinished :: Matrix -> Bool
+backtrackingFinished m = all (/= -1) [getValueAtMatrixPosition m (MatrixPosition(x,y)) | x <- [0..8], y <- [0..8]] && all (== True) [checkIfPositionLegal m (MatrixPosition(x,y)) (getValueAtMatrixPosition m (MatrixPosition(x,y))) | x <- [0..8], y <- [0..8]]
 
 printSudokuMatrix :: Matrix -> IO()
 printSudokuMatrix m = do
@@ -194,7 +173,7 @@ printSudokuMatrix m = do
                 else return ()
             printRows (y + 1)
             
-        printCols y 9 = putStrLn "|"
+        printCols y 9 = putStrLn ""
         printCols y x = do
             let val = getValueAtMatrixPosition m (MatrixPosition(x,y))
             putStr $ (if val == -1 then " " else show val)
