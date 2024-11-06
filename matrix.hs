@@ -6,8 +6,6 @@
 {-# HLINT ignore "Eta reduce" #-}
 {-# HLINT ignore "Use newtype instead of data" #-}
 
-import Data.Char (chr)
-
 data MatrixRow = MatrixRow(Int, Int, Int, Int, Int, Int, Int, Int, Int)
 data Matrix = Matrix (MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow, MatrixRow)
 data MatrixPosition = MatrixPosition(Int, Int)
@@ -102,7 +100,7 @@ listToMatrix list = Matrix (
         listToMatrixRow (take 9 (drop 72 list))
     )
 
-sudokuList = [3,-1,6,5,-1,8,4,-1,-1,5,2,-1,-1,-1,-1,-1,-1,-1,-1,8,7,-1,-1,-1,-1,3,1,-1,-1,3,-1,1,-1,-1,8,-1,9,-1,-1,8,6,3,-1,-1,5,-1,5,-1,-1,9,-1,6,-1,-1,1,3,-1,-1,-1,-1,2,5,-1,-1,-1,-1,-1,-1,-1,-1,7,4,-1,-1,5,2,-1,6,3,-1,-1]
+sudokuList = [5,1,8,6,-1,-1,4,-1,-1,-1,-1,6,-1,-1,-1,-1,-1,7,4,3,-1,2,-1,-1,-1,-1,6,7,-1,-1,-1,-1,-1,-1,3,-1,-1,6,4,-1,1,8,2,-1,5,-1,5,-1,7,2,6,9,4,8,-1,-1,9,-1,-1,1,8,2,3,-1,2,1,-1,-1,-1,7,-1,-1,3,-1,-1,-1,4,-1,-1,6,9]
 sudokuMatrix = listToMatrix sudokuList
 
 printIteratedMatrix :: Matrix -> MatrixPosition -> IO()
