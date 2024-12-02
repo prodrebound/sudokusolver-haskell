@@ -1,6 +1,7 @@
-module SudokuGenerator where
+module SudokuCreator where
 
 import Printer
+import SudokuLogic
 import CustomDataTypes
 import CustomMatrixOperations
 import Backtracking
@@ -84,9 +85,6 @@ matricesEqual m1 m2 =
                     getValueAtMatrixPosition m2 (MatrixPosition (x, y))) 
         [(x, y) | x <- [0..8], y <- [0..8]]
 
-getValueAtMatrixPosition :: Matrix -> MatrixPosition -> Int
-getValueAtMatrixPosition m (MatrixPosition(x,y)) = getElementFromRow (getRowFromRowList (matrixToRowList m) y) x
-
 matrixToIntList :: Matrix -> [Int]
 matrixToIntList m = concatMap matrixRowToIntList (matrixToRowList m)
 
@@ -98,6 +96,9 @@ main = do
     putStrLn "Generiertes Sudoku:"
     sudoku <- generateUniqueSudoku
     printSudokuMatrix sudoku
+
+    putStrLn "\nDrücken Sie Enter, um das gelöste Sudoku anzuzeigen..."
+    _ <- getLine
 
     putStrLn "\nGelöstes Sudoku:"
     let solvedSudoku = backtracking sudoku (MatrixPosition (0, 0))
