@@ -4,6 +4,7 @@ import CustomDataTypes
 import Printer
 import Backtracking
 import SudokuCreator
+import CustomMatrixOperations
 
 main :: IO ()
 main = do
@@ -17,3 +18,7 @@ main = do
     putStrLn "\nGelöstes Sudoku:"
     let solvedSudoku = backtracking sudoku (MatrixPosition (0, 0))
     printSudokuMatrix solvedSudoku
+
+    putStrLn "\nDrücken Sie Enter, um ein neues Sudoku zu generieren oder Strg+C zum Beenden..."
+    _ <- getLine
+    main
