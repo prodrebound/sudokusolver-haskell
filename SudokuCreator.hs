@@ -62,29 +62,21 @@ isValid m pos val =
 
 isSolvable :: Matrix -> IO Bool
 isSolvable m = do
-    putStrLn "Starting isSolvable"
     result <- tryBacktracking m (MatrixPosition (0, 0))
-    putStrLn "Finished tryBacktracking"
     solvable <- case result of
             Right res -> return (res /= m)
             Left ex   -> do
-                putStrLn $ "Exception caught: " ++ show ex
                 case fromException ex of
                     Just TooManyAttempts -> do
                         putStrLn "Too many attempts, restarting"
                         generateUniqueSudoku
                     Nothing -> return m
                 return False
-    putStrLn $ "Result: " ++ show solvable
     return solvable
   where
     tryBacktracking :: Matrix -> MatrixPosition -> IO (Either SomeException Matrix)
     tryBacktracking m' pos' = do
-        printSudokuMatrix m'
-        putStrLn (show (matrixToIntList m')) 
-        putStrLn "Starting tryBacktracking"
         result <- try $ evaluate (backtracking m' pos')
-        putStrLn "Finished evaluating backtracking"
         return result
 
 inRow, inColumn, inBox :: Matrix -> MatrixPosition -> Int -> Bool

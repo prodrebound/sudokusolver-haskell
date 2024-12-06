@@ -47,8 +47,8 @@ tryValues m pos val fixvalues
 
 evaluateTryValueResult :: Matrix -> MatrixPosition -> [Bool] -> Int -> Int -> Matrix
 evaluateTryValueResult m pos fixvalues val counter
-    | val == -1 = backtrackingIteration (setValueAtMatrixPos m pos val) (getPreviousMatrixPosition pos fixvalues) fixvalues (counter + 1)
-    | otherwise = backtrackingIteration (setValueAtMatrixPos m pos val) (getNextMatrixPosition pos fixvalues) fixvalues (counter + 1)
+    | val == -1 = backtrackingIteration (setValueAtMatrixPos m pos val) (getPreviousMatrixPosition pos fixvalues) fixvalues counter
+    | otherwise = backtrackingIteration (setValueAtMatrixPos m pos val) (getNextMatrixPosition pos fixvalues) fixvalues counter
 
 getNextMatrixPosition :: MatrixPosition -> [Bool] -> MatrixPosition
 getNextMatrixPosition pos fixvalues

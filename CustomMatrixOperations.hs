@@ -47,3 +47,7 @@ listToMatrix list = Matrix (
         listToMatrixRow (take 9 (drop 63 list)),
         listToMatrixRow (take 9 (drop 72 list))
     )
+
+reverseList :: [Int] -> [Int]
+reverseList [] = []
+reverseList xs = last xs : reverseList (init xs)
