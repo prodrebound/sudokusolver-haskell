@@ -7,6 +7,11 @@ import CustomMatrixOperations
 import Backtracking
 import System.Random
 import Data.List (transpose)
+import GHC.IO (unsafePerformIO)
+import Control.Exception (SomeException)
+import Control.Exception.Base
+import Control.Exception (try, SomeException, evaluate)
+import Control.Monad (when)
 
 
 tryFixSudoku :: Matrix -> Int -> IO Matrix
@@ -15,7 +20,7 @@ tryFixSudoku m n = do
     let emptyPos = findEmptyPos m
     randomVal <- randomRIO (1, 9)
     let updatedMatrix = setValueAtMatrixPos m emptyPos randomVal
-    let solvedSudoku = backtracking updatedMatrix (MatrixPosition (0, 0))
+    let solvedSudoku = backtracking updatedMatrix (MatrixPosition (0, 0)) True
     if solvedSudoku /= updatedMatrix
         then tryFixSudoku updatedMatrix (n + 1)
         else do
@@ -29,12 +34,12 @@ replaceAtIndex :: Int -> a -> [a] -> [a]
 replaceAtIndex idx val list = take idx list ++ [val] ++ drop (idx + 1) list
 
 
--- | Setzt zufällige Werte in die Matrix
 generateUniqueSudoku :: IO Matrix
 generateUniqueSudoku = do
     let emptyMatrix = listToMatrix (replicate 81 (-1))
     sudoku <- fillRandomValues emptyMatrix 20
-    if isSolvable sudoku
+    solvable <- isSolvable sudoku
+    if solvable
         then return sudoku
         else generateUniqueSudoku -- Rekursiv erneut generieren, falls das Sudoku nicht lösbar ist
 
@@ -55,8 +60,24 @@ isValid :: Matrix -> MatrixPosition -> Int -> Bool
 isValid m pos val =
     not (inRow m pos val || inColumn m pos val || inBox m pos val)
 
-isSolvable :: Matrix -> Bool
-isSolvable m = backtracking m (MatrixPosition (0, 0)) /= m
+isSolvable :: Matrix -> IO Bool
+isSolvable m = do
+    result <- tryBacktracking m (MatrixPosition (0, 0))
+    solvable <- case result of
+            Right res -> return (res /= m)
+            Left ex   -> do
+                case fromException ex of
+                    Just TooManyAttempts -> do
+                        putStrLn "Too many attempts, restarting"
+                        generateUniqueSudoku
+                    Nothing -> return m
+                return False
+    return solvable
+  where
+    tryBacktracking :: Matrix -> MatrixPosition -> IO (Either SomeException Matrix)
+    tryBacktracking m' pos' = do
+        result <- try $ evaluate (backtracking m' pos' True)
+        return result
 
 inRow, inColumn, inBox :: Matrix -> MatrixPosition -> Int -> Bool
 inRow m (MatrixPosition (x, _)) val =
