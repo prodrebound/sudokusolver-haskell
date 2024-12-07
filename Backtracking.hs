@@ -17,22 +17,21 @@ getFixValueMatrix m = [getValueAtMatrixPosition m (MatrixPosition (x, y)) /= -1 
 checkIfMatrixPosFix :: MatrixPosition -> [Bool] -> Bool
 checkIfMatrixPosFix p fixvalues = getListItem fixvalues (matrixPosToListPos p) == True
 
-backtracking :: Matrix -> MatrixPosition -> Matrix 
-backtracking m pos = backtrackingIteration m pos (getFixValueMatrix m) 0
+backtracking :: Matrix -> MatrixPosition -> Bool -> Matrix 
+backtracking m pos counterActive = backtrackingIteration m pos (getFixValueMatrix m) 0 counterActive
     
-
-backtrackingIteration :: Matrix -> MatrixPosition -> [Bool] -> Int -> Matrix
-backtrackingIteration m pos fixvalues counter
-    | counter > 100000 = throw TooManyAttempts
+backtrackingIteration :: Matrix -> MatrixPosition -> [Bool] -> Int -> Bool -> Matrix
+backtrackingIteration m pos fixvalues counter counterActive
+    | counterActive && counter > 100000 = throw TooManyAttempts
     | checkIfMatrixRowOutOfBound pos = m
-    | checkIfMatrixPosFix pos fixvalues = backtrackingIteration m (getNextMatrixPosition pos fixvalues) fixvalues (counter+1)
+    | checkIfMatrixPosFix pos fixvalues = backtrackingIteration m (getNextMatrixPosition pos fixvalues) fixvalues (counter+1) counterActive
     | not (checkIfPositionEmpty m pos) &&  checkIfPositionLegal m pos (getValueAtMatrixPosition m pos) =
-        backtrackingIteration m (getNextMatrixPosition pos fixvalues) fixvalues (counter+1)
+        backtrackingIteration m (getNextMatrixPosition pos fixvalues) fixvalues (counter+1) counterActive
     | otherwise = 
         let currentVal = getValueAtMatrixPosition m pos
         in if currentVal == -1 
-            then evaluateTryValueResult m pos fixvalues (tryValues m pos 1 fixvalues) (counter+1) 
-            else evaluateTryValueResult m pos fixvalues (tryValues m pos (currentVal+1) fixvalues) (counter+1)
+            then evaluateTryValueResult m pos fixvalues (tryValues m pos 1 fixvalues) (counter+1) counterActive
+            else evaluateTryValueResult m pos fixvalues (tryValues m pos (currentVal+1) fixvalues) (counter+1) counterActive
 
 checkPositionValue :: Matrix -> MatrixPosition -> [Bool] -> Bool
 checkPositionValue m pos fixvalues =
@@ -45,10 +44,10 @@ tryValues m pos val fixvalues
     | checkIfPositionLegal m pos val = val
     | otherwise = tryValues m pos (val+1) fixvalues
 
-evaluateTryValueResult :: Matrix -> MatrixPosition -> [Bool] -> Int -> Int -> Matrix
-evaluateTryValueResult m pos fixvalues val counter
-    | val == -1 = backtrackingIteration (setValueAtMatrixPos m pos val) (getPreviousMatrixPosition pos fixvalues) fixvalues counter
-    | otherwise = backtrackingIteration (setValueAtMatrixPos m pos val) (getNextMatrixPosition pos fixvalues) fixvalues counter
+evaluateTryValueResult :: Matrix -> MatrixPosition -> [Bool] -> Int -> Int -> Bool -> Matrix
+evaluateTryValueResult m pos fixvalues val counter counterActive
+    | val == -1 = backtrackingIteration (setValueAtMatrixPos m pos val) (getPreviousMatrixPosition pos fixvalues) fixvalues (counter+1) counterActive
+    | otherwise = backtrackingIteration (setValueAtMatrixPos m pos val) (getNextMatrixPosition pos fixvalues) fixvalues (counter+1) counterActive
 
 getNextMatrixPosition :: MatrixPosition -> [Bool] -> MatrixPosition
 getNextMatrixPosition pos fixvalues

@@ -16,7 +16,7 @@ main = do
     _ <- getLine
 
     putStrLn "\nGelöstes Sudoku:"
-    let solvedSudoku = backtracking sudoku (MatrixPosition (0, 0))
+    let solvedSudoku = backtracking sudoku (MatrixPosition (0, 0)) False
     printSudokuMatrix solvedSudoku
 
     putStrLn "\nDrücken Sie Enter, um ein neues Sudoku zu generieren oder Strg+C zum Beenden..."

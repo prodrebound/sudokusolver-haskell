@@ -20,7 +20,7 @@ tryFixSudoku m n = do
     let emptyPos = findEmptyPos m
     randomVal <- randomRIO (1, 9)
     let updatedMatrix = setValueAtMatrixPos m emptyPos randomVal
-    let solvedSudoku = backtracking updatedMatrix (MatrixPosition (0, 0))
+    let solvedSudoku = backtracking updatedMatrix (MatrixPosition (0, 0)) True
     if solvedSudoku /= updatedMatrix
         then tryFixSudoku updatedMatrix (n + 1)
         else do
@@ -76,7 +76,7 @@ isSolvable m = do
   where
     tryBacktracking :: Matrix -> MatrixPosition -> IO (Either SomeException Matrix)
     tryBacktracking m' pos' = do
-        result <- try $ evaluate (backtracking m' pos')
+        result <- try $ evaluate (backtracking m' pos' True)
         return result
 
 inRow, inColumn, inBox :: Matrix -> MatrixPosition -> Int -> Bool
