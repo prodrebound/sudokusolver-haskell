@@ -68,7 +68,7 @@ isSolvable m = do
             Left ex   -> do
                 case fromException ex of
                     Just TooManyAttempts -> do
-                        putStrLn "Too many attempts, restarting"
+                        --putStrLn "Too many attempts, restarting"
                         generateUniqueSudoku
                     Nothing -> return m
                 return False
