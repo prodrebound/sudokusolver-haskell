@@ -22,7 +22,7 @@ backtracking m pos counterActive = backtrackingIteration m pos (getFixValueMatri
     
 backtrackingIteration :: Matrix -> MatrixPosition -> [Bool] -> Int -> Bool -> Matrix
 backtrackingIteration m pos fixvalues counter counterActive
-    | counterActive && counter > 100000 = throw TooManyAttempts
+    | counterActive && counter > 250000 = throw TooManyAttempts
     | checkIfMatrixRowOutOfBound pos = m
     | checkIfMatrixPosFix pos fixvalues = backtrackingIteration m (getNextMatrixPosition pos fixvalues) fixvalues (counter+1) counterActive
     | not (checkIfPositionEmpty m pos) &&  checkIfPositionLegal m pos (getValueAtMatrixPosition m pos) =
