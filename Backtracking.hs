@@ -17,8 +17,8 @@ getFixValueMatrix m = [getValueAtMatrixPosition m (MatrixPosition (x, y)) /= -1 
 checkIfMatrixPosFix :: MatrixPosition -> [Bool] -> Bool
 checkIfMatrixPosFix p fixvalues = getListItem fixvalues (matrixPosToListPos p) == True
 
-backtracking :: Matrix -> MatrixPosition -> Bool -> Matrix 
-backtracking m pos counterActive = backtrackingIteration m pos (getFixValueMatrix m) 0 counterActive
+backtracking :: Matrix -> Bool -> Matrix 
+backtracking m counterActive = backtrackingIteration m (MatrixPosition(0,0)) (getFixValueMatrix m) 0 counterActive
     
 backtrackingIteration :: Matrix -> MatrixPosition -> [Bool] -> Int -> Bool -> Matrix
 backtrackingIteration m pos fixvalues counter counterActive
