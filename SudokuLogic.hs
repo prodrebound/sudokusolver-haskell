@@ -15,7 +15,8 @@ checkIfNumberIn3x3 m (MatrixPosition(x,y)) num =
     in elem num (filterOutEmptyPositions block)
 
 checkIfPositionLegal :: Matrix -> MatrixPosition -> Int -> Bool
-checkIfPositionLegal m (MatrixPosition(x, y)) i =   not (elem i (filterOutEmptyPositions (getColumnIntListFromMatrix m x))) && not (elem i (filterOutEmptyPositions (getRowIntListFromMatrix m y))) && not (checkIfNumberIn3x3 m (MatrixPosition (x,y)) i)
+checkIfPositionLegal m (MatrixPosition(x, y)) i =   not (elem i (filterOutEmptyPositions (getColumnIntListFromMatrix m x))) 
+    && not (elem i (filterOutEmptyPositions (getRowIntListFromMatrix m y))) && not (checkIfNumberIn3x3 m (MatrixPosition (x,y)) i)
 
 --all the initial given values in this Matrix are 1, all values which are not given are 0
 checkIfPositionEmpty :: Matrix -> MatrixPosition -> Bool
