@@ -20,7 +20,7 @@ tryFixSudoku m n = do
     let emptyPos = findEmptyPos m
     randomVal <- randomRIO (1, 9)
     let updatedMatrix = setValueAtMatrixPos m emptyPos randomVal
-    let solvedSudoku = backtracking updatedMatrix (MatrixPosition (0, 0)) True
+    let solvedSudoku = backtracking updatedMatrix True
     if solvedSudoku /= updatedMatrix
         then tryFixSudoku updatedMatrix (n + 1)
         else do
@@ -76,8 +76,7 @@ isSolvable m = do
   where
     tryBacktracking :: Matrix -> MatrixPosition -> IO (Either SomeException Matrix)
     tryBacktracking m' pos' = do
-        result <- try $ evaluate (backtracking m' pos' True)
-        return result
+        try $ evaluate (backtracking m' True)
 
 inRow, inColumn, inBox :: Matrix -> MatrixPosition -> Int -> Bool
 inRow m (MatrixPosition (x, _)) val =
@@ -93,7 +92,7 @@ inBox m (MatrixPosition (x, y)) val =
 
 -- | Invertiert die Reihenfolge der Werte in der Matrix
 reverseMatrix :: Matrix -> Matrix
-reverseMatrix m = 
+reverseMatrix m =
     let intList = matrixToIntList m
         reversedList = reverse intList
     in listToMatrix reversedList
@@ -102,8 +101,8 @@ reverseMatrix m =
 -- | Vergleicht zwei Matrizen auf Gleichheit
 matricesEqual :: Matrix -> Matrix -> Bool
 matricesEqual m1 m2 =
-    all (\(x, y) -> getValueAtMatrixPosition m1 (MatrixPosition (x, y)) == 
-                    getValueAtMatrixPosition m2 (MatrixPosition (x, y))) 
+    all (\(x, y) -> getValueAtMatrixPosition m1 (MatrixPosition (x, y)) ==
+                    getValueAtMatrixPosition m2 (MatrixPosition (x, y)))
         [(x, y) | x <- [0..8], y <- [0..8]]
 
 matrixToIntList :: Matrix -> [Int]

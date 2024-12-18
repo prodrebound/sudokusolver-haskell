@@ -16,7 +16,7 @@ main = do
     _ <- getLine
 
     putStrLn "\nGelöstes Sudoku:"
-    let solvedSudoku = backtracking sudokuMatrix (MatrixPosition (0, 0)) False
+    let solvedSudoku = backtracking sudokuMatrix False
     printSudokuMatrix solvedSudoku
 
     putStrLn "\nDrücken Sie Enter, um das Programm zu beenden..."
