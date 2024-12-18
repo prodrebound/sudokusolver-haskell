@@ -51,7 +51,7 @@ evaluateTryValueResult m pos fixvalues val counter counterActive
 
 getNextMatrixPosition :: MatrixPosition -> [Bool] -> MatrixPosition
 getNextMatrixPosition pos fixvalues
-    | x == 8 && y == 8 = incrementMatrixPosition pos
+    | x == 8 && y == 8 = incrementMatrixPosition pos -- sonst gibt die Zeile darunter ein Fehler, in backtracking Iteration wird das erneut überprüft
     | checkIfMatrixPosFix (incrementMatrixPosition pos) fixvalues = getNextMatrixPosition (incrementMatrixPosition pos) fixvalues
     | otherwise = incrementMatrixPosition pos
     where MatrixPosition(x,y) = pos
